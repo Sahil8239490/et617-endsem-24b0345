@@ -1,25 +1,27 @@
 // Vercel serverless function: POST /api/feedback
-// Sends the learner's explanation to Google Gemini and returns
+// Sends the learner's justification to Google Gemini and returns
 // { verdict, feedback }. The key is read from the Vercel environment
 // variable GEMINI_API_KEY (never stored in the code).
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 function buildPrompt(b) {
-  return `You are a kind, patient maths tutor for Riya, a 14-year-old repeating Class 8 linear equations. She is anxious and gives up easily.
+  return `You are a sharp, encouraging maths coach for Kabir, a 13-year-old Class 8 student preparing for a maths Olympiad. He finds routine practice boring and likes to be challenged.
 
 Equation: ${b.equation}
-Correct solution: x = ${b.correctX}
-Riya's answer: x = ${b.learnerAnswer}
-The app's diagnosis from her answer: ${b.diagnosis} (sign = kept the sign when moving a term across "="; oneSide = did an operation to only one side or one term; unknown = other error)
-Riya's explanation of her first step: "${b.explanation}"
+Correct answer: ${b.correctX}
+Kabir's answer: ${b.learnerAnswer}
+The app's diagnosis from his answer: ${b.diagnosis}
+(sign = sign slip when expanding a negative bracket or moving a term; oneSolution = assumed exactly one solution when there is none or infinitely many; fraction = added denominators; unknown = other error; correct = right answer)
+Kabir's justification: "${b.explanation}"
 
-Judge ONLY her explanation of the first step. Known misconceptions:
-- sign_error: she moves a term across "=" without changing its sign.
-- one_side_error: she applies an operation to only one side or only one term.
+Judge ONLY the reasoning in his justification. Known misconceptions:
+- sign_error: applies a negative to only the first term in a bracket, or moves a term across "=" without changing its sign.
+- one_solution_assumption: believes every linear equation has exactly one solution.
+- fraction_error: adds fractions by adding denominators.
 
 Reply with ONLY this JSON, nothing else:
-{"verdict": "correct" | "sign_error" | "one_side_error" | "unclear", "feedback": "<max 2 short, simple, warm sentences. Never use the words wrong or incorrect. Do not tell her the final value of x. Point to the balance idea: do the same to both sides.>"}`;
+{"verdict": "correct" | "sign_error" | "one_solution_assumption" | "fraction_error" | "unclear", "feedback": "<max 2 short sentences. Do not reveal the correct answer. If his reasoning is right, end with one harder follow-up question (Olympiad style). If not, ask one probing question that makes him find the flaw himself.>"}`;
 }
 
 module.exports = async (req, res) => {

@@ -1,14 +1,14 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Balance It!</title>
+  <title>Equation Arena</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <span id="app-name">Balance It!</span>
+    <span id="app-name">Equation Arena</span>
     <nav>
       <button class="link" data-go="home">Home</button>
       <button class="link" data-go="teacher-login">Teacher</button>
@@ -35,17 +35,19 @@
         <button class="secondary" id="btn-lesson-back">Back</button>
         <button class="primary" id="btn-lesson-next">Next</button>
       </div>
+      <button class="secondary" id="btn-skip-lesson" style="margin-top:10px;width:100%"></button>
     </section>
 
     <!-- SCREEN 3: Question -->
     <section id="question" class="screen hidden">
-      <p class="meta"><span id="q-count"></span> · <span id="q-level"></span></p>
+      <p class="meta"><span id="q-count"></span> Â· <span id="q-level"></span></p>
       <p class="format" id="q-format"></p>
       <div class="equation" id="q-equation"></div>
       <div id="q-input"></div>
       <p id="q-hint" class="hint hidden"></p>
       <div class="row">
-        <button class="secondary" id="btn-hint">💡 Hint</button>
+        <button class="secondary" id="btn-hint">ðŸ’¡ Hint</button>
+        <button class="secondary" id="btn-challenge">âš¡ Challenge me</button>
         <button class="primary" id="btn-check">Check</button>
       </div>
     </section>
@@ -79,7 +81,7 @@
 
     <!-- SCREEN 7: Teacher dashboard (C5) -->
     <section id="teacher" class="screen hidden">
-      <h2>Teacher view — <span class="learner-name"></span>'s progress</h2>
+      <h2>Teacher view â€” <span class="learner-name"></span>'s progress</h2>
       <div id="t-progress" class="card"></div>
       <h3>Attempts (AI feedback needs your check)</h3>
       <div id="t-attempts"></div>
@@ -93,7 +95,7 @@
     </section>
   </main>
 
-  <footer>ET 617 · Roll no: <span class="rollno"></span></footer>
+  <footer>ET 617 Â· Roll no: <span class="rollno"></span></footer>
 
   <script src="content.js"></script>
   <script src="app.js"></script>

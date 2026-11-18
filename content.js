@@ -7,8 +7,8 @@
 const CONTENT = {
   // ---------- Identity (shown in the footer of every screen + About) ----------
   rollNo: "ROLLNO",                 // <-- put your roll number here, e.g. "23B1234"
-  appName: "Balance It!",
-  learnerName: "Riya",
+  appName: "Equation Arena",
+  learnerName: "Kabir",
 
   // ---------- Session settings ----------
   questionsPerSession: 6,           // how many questions in one session
@@ -16,10 +16,10 @@ const CONTENT = {
   teacherPin: "1234",               // PIN to open the Teacher view
 
   levelNames: {
-    1: "Level 1 — one step (x + a = b)",
-    2: "Level 2 — two steps (ax + b = c)",
-    3: "Level 3 — x on both sides (ax + b = cx + d)",
-    4: "Level 4 — brackets (a(x + b) = c)",
+    1: "Level 1 — Warm-up: x on both sides",
+    2: "Level 2 — Trap: negative outside a bracket",
+    3: "Level 3 — Fractions: x/a + x/b = c",
+    4: "Level 4 — Olympiad: how many solutions?",
   },
 
   // Question formats, used in this order and repeated
@@ -27,109 +27,117 @@ const CONTENT = {
   formatLabels: {
     numeric: "Type the answer",
     mcq: "Pick the answer",
-    explain: "Solve and explain your first step",
+    explain: "Solve and justify",
+    count: "How many solutions?",
   },
 
   // ---------- Home screen ----------
   home: {
-    title: "Hi Riya! Let's balance some equations.",
+    title: "Kabir, ready for something harder than the textbook?",
     lines: [
-      "There is no timer here. Take your time.",
-      "Mistakes are fine — they show us what to practise next.",
-      "You can ask for a hint any time.",
+      "No routine drills — every correct answer unlocks a harder level.",
+      "Bored? Press ⚡ Challenge me to skip ahead.",
+      "Final boss: equations with no solution or infinitely many.",
     ],
-    startButton: "Start learning",
+    startButton: "Enter the arena",
   },
 
   // ---------- Concept explanation (Learn screen) ----------
   lesson: [
     {
-      title: "1. An equation is a balance",
-      text: "Think of = as the middle of a weighing scale. The left side and the right side weigh the same.",
-      visual: "x + 5  ⚖  12",
+      title: "1. You already know the moves",
+      text: "Do the same operation to both sides and the equation stays true. Let's test that idea on harder cases.",
+      visual: "3x + 4 = x + 10  →  2x = 6  →  x = 3",
     },
     {
-      title: "2. Keep it balanced",
-      text: "Whatever we do to one side, we do to the other side too. Then the scale stays balanced.",
-      visual: "x + 5 − 5  ⚖  12 − 5",
+      title: "2. Trap: a minus outside a bracket",
+      text: "The minus multiplies EVERY term inside. Fast solvers often flip only the first one.",
+      visual: "−2(x − 3) = −2x + 6   (not −2x − 6)",
     },
     {
-      title: "3. So x is…",
-      text: "x = 7. That is why +5 'becomes' −5 when it moves. It does not jump — we subtracted 5 from BOTH sides.",
-      visual: "x  ⚖  7",
+      title: "3. Puzzle: does every equation have one answer?",
+      text: "Try 2(x + 3) = 2x + 6. Expand: 2x + 6 = 2x + 6. Every x works! Now try 2(x + 3) = 2x + 5: we get 6 = 5. No x works!",
+      visual: "one solution · no solution · infinitely many",
     },
     {
-      title: "4. Check your answer",
-      text: "Put 7 back in: 7 + 5 = 12. ✓ Both sides match, so we are right!",
-      visual: "7 + 5 = 12 ✓",
+      title: "4. Olympiad habit",
+      text: "When x disappears, don't panic: read what is left. True statement → infinitely many. False statement → no solution.",
+      visual: "0 = 0 → ∞     0 = 1 → none",
     },
   ],
+  skipLessonLabel: "I know this — skip to questions",
 
   // ---------- Feedback messages ----------
   feedback: {
     correct: [
-      "Yes! You kept the scale balanced. ⭐",
-      "Well done, Riya! That's exactly right. ⭐",
-      "Correct! You are getting stronger at this. ⭐",
+      "Correct. Level up! 🔥",
+      "Clean solve, Kabir. Next one is tougher. 🔥",
+      "Right — and you avoided the trap. 🔥",
     ],
-    harderNext: "You're ready for a slightly harder one.",
-    notYet: "Not yet — let's look at this step together.",
+    harderNext: "Unlocking a harder level.",
+    notYet: "Not quite — there's a trap in this one. Let's find it.",
   },
 
   // Alternative explanations for each misconception (decision rule outcome 2)
   remedies: {
     sign: {
-      title: "Let's look at the sign",
-      text: "It looks like the number moved across = but kept its sign. Remember the balance: to remove +5 from the left, we SUBTRACT 5 from both sides. So +5 on the left becomes −5 on the right.",
-      example: "x + 5 = 12  →  x + 5 − 5 = 12 − 5  →  x = 7  (not 12 + 5)",
+      title: "Spot the sign slip",
+      text: "Your answer is exactly what we get if a negative sign is applied to only the first term in the bracket (or a term moves across = without changing sign). Check: substitute your answer back into the ORIGINAL equation — do both sides match?",
+      example: "−3(x − 2) = −3x + 6   because (−3)×(−2) = +6",
     },
-    oneSide: {
-      title: "Both sides, every term",
-      text: "It looks like a step was done to only one side (or one term). The scale tips over! Whatever we divide or multiply on the left, we do to the WHOLE right side too.",
-      example: "3x + 4 = 19  →  3x = 15  →  3x ÷ 3 = 15 ÷ 3  →  x = 5",
+    oneSolution: {
+      title: "Not every equation has exactly one answer",
+      text: "When you simplify, x can cancel out completely. Then look at what's left: if it's always true (like 6 = 6), EVERY x works. If it's false (like 6 = 5), NO x works.",
+      example: "4(x + 1) = 4x + 4  →  4 = 4  → infinitely many",
+    },
+    fraction: {
+      title: "Fractions don't add like that",
+      text: "x/2 + x/3 is not x/5. Use the LCM: x/2 + x/3 = 3x/6 + 2x/6 = 5x/6.",
+      example: "x/2 + x/3 = 10  →  5x/6 = 10  →  x = 12",
     },
     unknown: {
-      title: "Let's slow down",
-      text: "Let's try the next one step by step. Write one small step at a time and check it.",
+      title: "Check by substituting",
+      text: "Olympiad trick: put your answer back into the original equation. If both sides don't match, find the first step where they stopped being equal.",
       example: "",
     },
   },
 
   // Prerequisite instruction (decision rule outcome 3)
   prerequisite: {
-    title: "A quick refresher: opposite operations",
-    text: "Every operation has an opposite that undoes it. Adding is undone by subtracting. Multiplying is undone by dividing. We use the opposite operation on BOTH sides to get x alone.",
+    title: "Quick reset: the distributive law with negatives",
+    text: "A number outside a bracket multiplies every term inside, sign included. Two negatives make a positive.",
     table: [
-      ["+ 4", "undo with − 4"],
-      ["− 3", "undo with + 3"],
-      ["× 2", "undo with ÷ 2"],
-      ["÷ 5", "undo with × 5"],
+      ["−2(x + 5)", "= −2x − 10"],
+      ["−2(x − 5)", "= −2x + 10"],
+      ["3(x − 4)", "= 3x − 12"],
+      ["−(x − 1)", "= −x + 1"],
     ],
-    tip: "Signs with negatives: −3 + 3 = 0, and 5 − (−2) = 7.",
+    tip: "Always check: substitute your answer into the original equation.",
   },
 
-  hint: "Hint: what is being done to x? Do the opposite to BOTH sides, one step at a time.",
+  hint: "Hint: expand brackets carefully (watch the signs), collect x on one side, then check by substituting.",
 
   // Fallback feedback for the explanation question when the AI is not available
   explainFallback: {
-    good: "Nice explanation — you did the same thing to both sides. That's the key idea!",
-    sign: "Check the sign: when you remove a number from one side, you do the opposite operation (+ becomes −) on both sides.",
-    oneSide: "Remember to do each step to BOTH sides, and to every term.",
-    unclear: "Try saying what you did to both sides, for example: 'I subtracted 4 from both sides'.",
+    good: "Good justification — you kept both sides equal. Can you find a different equation where x cancels out?",
+    sign: "Look at the sign when you expanded or moved a term. Substitute your answer back — does it really work?",
+    oneSolution: "What happened to x after simplifying? If it cancelled, read the statement that is left.",
+    fraction: "Check how you added the fractions. What is the LCM of the denominators?",
+    unclear: "Justify each step: what did you do to both sides, and why does the equation stay true?",
   },
 
   // ---------- Summary screen ----------
   summary: {
-    title: "Session complete! 🎉",
-    message: "Every question you tried made you stronger. Come back tomorrow for the next set.",
+    title: "Session complete! 🏆",
+    message: "Next session starts at your new level. Try to beat your score.",
   },
 
   // ---------- About screen ----------
   about: [
-    "Balance It! is an adaptive tutor for linear equations in one variable (Class 8).",
-    "It was designed for learners repeating the topic who feel anxious about maths.",
-    "Questions are generated automatically. The tutor diagnoses two common misconceptions and chooses the next step: a harder question, a new explanation, or a refresher.",
-    "A teacher checks and can approve or change the AI's feedback.",
-    "ET 617 End-Semester Exam · Card: P4 · P4-T3 · L5 · C5",
+    "Equation Arena is an adaptive tutor for linear equations in one variable (Class 8), stretched to Olympiad level.",
+    "It was designed for a high-achieving learner who is bored by routine practice.",
+    "Questions are generated automatically. The tutor diagnoses misconceptions from the exact wrong answer and chooses the next step: a harder question, an alternative explanation, or a prerequisite refresher.",
+    "A teacher checks and can approve or override the AI's feedback.",
+    "ET 617 End-Semester Exam · Card: P4 · P4-T3 · L6 · C5",
   ],
 };

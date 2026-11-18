@@ -32,39 +32,52 @@ function save() {
 
 // ---------- 3. Automatic question generator ----------
 // Each question stores the correct answer AND the answer a learner would get
-// with misconception M1 (sign) or M2 (one side), so wrong answers can be diagnosed.
+// with a misconception, so wrong answers can be diagnosed.
+// Misconceptions: "sign" (sign slip with negatives), "oneSolution" (assumes every
+// equation has exactly one solution), "fraction" (adds denominators).
+const COUNT_LABELS = { one: "Exactly one solution", none: "No solution", infinite: "Infinitely many solutions" };
+const lcm = (a, b) => { const g = (p, q) => (q ? g(q, p % q) : p); return (a * b) / g(a, b); };
+
 function generate(level) {
   let q;
-  if (level === 1) {                      // x + a = b
-    const x = rand(2, 12), a = sign() * rand(2, 9), b = x + a;
-    q = { text: `x ${term(a)} = ${b}`, x, signAns: b + a, oneSideAns: null,
-      steps: [`x ${term(a)} ${term(-a)} = ${b} ${term(-a)}`, `x = ${x}`] };
-  } else if (level === 2) {               // ax + b = c
-    const a = rand(2, 5), x = rand(1, 9), b = sign() * rand(1, 9), c = a * x + b;
-    q = { text: `${a}x ${term(b)} = ${c}`, x, signAns: (c + b) / a, oneSideAns: c - b,
-      steps: [`${a}x = ${c} ${term(-b)}  (${term(-b)} on both sides)`, `${a}x = ${c - b}`, `x = ${c - b} ÷ ${a} = ${x}`] };
-  } else if (level === 3) {               // ax + b = cx + d
+  if (level === 1) {                      // ax + b = cx + d
     let a, b, c, d, x;
-    do { c = rand(1, 3); a = c + rand(1, 3); x = rand(1, 6); b = sign() * rand(1, 8); d = a * x + b - c * x; } while (d === 0);
-    q = { text: `${coef(a)} ${term(b)} = ${coef(c)} ${term(d)}`, x, signAns: (d - b) / (a + c), oneSideAns: d - b,
-      steps: [`${a}x − ${coef(c)} = ${d} ${term(-b)}  (move ${coef(c)} and ${b} using opposite operations)`, `${a - c}x = ${d - b}`, `x = ${x}`] };
-  } else {                                // a(x + b) = c
-    let a, b, x;
-    do { a = rand(2, 5); b = sign() * rand(1, 6); x = rand(1, 8); } while (x + b === 0);
-    const c = a * (x + b);
-    q = { text: `${a}(x ${term(b)}) = ${c}`, x, signAns: c / a + b, oneSideAns: (c - b) / a,
-      steps: [`x ${term(b)} = ${c} ÷ ${a} = ${c / a}  (divide BOTH sides by ${a})`, `x = ${c / a} ${term(-b)} = ${x}`] };
+    do { c = rand(1, 4); a = c + rand(1, 4); x = rand(-5, 8); b = sign() * rand(1, 9); d = a * x + b - c * x; } while (d === 0);
+    q = { text: `${coef(a)} ${term(b)} = ${coef(c)} ${term(d)}`, x, signAns: (d - b) / (a + c), fracAns: null,
+      steps: [`${a}x − ${coef(c)} = ${d} ${term(-b)}  (take ${coef(c)} and ${b} across using opposite operations)`, `${a - c}x = ${d - b}`, `x = ${x}`] };
+  } else if (level === 2) {               // −k(x + b) = c   (negative outside a bracket)
+    let k, b, x;
+    do { k = -rand(2, 5); b = sign() * rand(1, 6); x = rand(-4, 8); } while (x + b === 0);
+    const c = k * (x + b);
+    q = { text: `−${-k}(x ${term(b)}) = ${c}`, x, signAns: (c + k * b) / k, fracAns: null,
+      steps: [`Expand: ${k}x ${term(k * b)} = ${c}   (${k} × ${b} = ${k * b})`, `${k}x = ${c - k * b}`, `x = ${c - k * b} ÷ (${k}) = ${x}`] };
+  } else if (level === 3) {               // x/a + x/b = c
+    let a, b;
+    do { a = rand(2, 6); b = rand(2, 6); } while (a === b);
+    const L = lcm(a, b), x = L * rand(1, 3) * sign(), c = x / a + x / b;
+    q = { text: `x/${a} + x/${b} = ${c}`, x, signAns: null, fracAns: c * (a + b),
+      steps: [`LCM of ${a} and ${b} is ${L}: ${L / a}x/${L} + ${L / b}x/${L} = ${c}`, `${L / a + L / b}x/${L} = ${c}`, `x = ${c} × ${L} ÷ ${L / a + L / b} = ${x}`] };
+  } else {                                // how many solutions?
+    const a = rand(2, 5), b = sign() * rand(1, 6), kind = pick(["one", "none", "infinite"]);
+    let right, steps;
+    if (kind === "infinite") { right = `${a}x ${term(a * b)}`; steps = [`Expand: ${a}x ${term(a * b)} = ${right}`, `x cancels: ${a * b} = ${a * b} is always true`, `Every x works → infinitely many`]; }
+    else if (kind === "none") { const e = a * b + pick([-3, -2, -1, 1, 2, 3]); right = `${a}x ${term(e)}`; steps = [`Expand: ${a}x ${term(a * b)} = ${right}`, `x cancels: ${a * b} = ${e} is false`, `No x works → no solution`]; }
+    else { const a2 = a + pick([-1, 1, 2]), e = rand(-6, 6); right = `${coef(a2)} ${term(e)}`; steps = [`Expand: ${a}x ${term(a * b)} = ${right}`, `${a - a2}x = ${e - a * b}  (x does not cancel)`, `So there is exactly one solution: x = ${round2((e - a * b) / (a - a2))}`]; }
+    q = { text: `${a}(x ${term(b)}) = ${right}`, x: kind, kind: "count", steps };
   }
-  if (same(q.signAns, q.x)) q.signAns = null;
-  if (same(q.oneSideAns, q.x)) q.oneSideAns = null;
+  if (q.kind !== "count") {
+    if (same(q.signAns, q.x)) q.signAns = null;
+    if (same(q.fracAns, q.x)) q.fracAns = null;
+  }
   q.level = level;
   q.format = CONTENT.formatOrder[state.qNum % CONTENT.formatOrder.length];
-  if (q.format === "mcq") q.options = makeOptions(q);
+  if (q.kind === "count") q.options = ["one", "none", "infinite"];
+  else if (q.format === "mcq") q.options = makeOptions(q);
   return q;
 }
 
 function makeOptions(q) {
-  const opts = [q.x, q.signAns, q.oneSideAns, q.x + pick([-2, -1, 1, 2, 3])].filter((v) => v !== null).map(round2);
+  const opts = [q.x, q.signAns, q.fracAns, q.x + pick([-2, -1, 1, 2, 3])].filter((v) => v !== null).map(round2);
   const unique = [...new Set(opts)];
   while (unique.length < 4) { const v = q.x + rand(-6, 6); if (!unique.includes(v)) unique.push(v); }
   return unique.sort(() => Math.random() - 0.5);
@@ -72,9 +85,14 @@ function makeOptions(q) {
 
 // ---------- 4. Diagnosis + DECISION RULE ----------
 function diagnose(q, ans) {
+  if (q.kind === "count") {
+    if (ans === q.x) return "correct";
+    if (ans === "one") return "oneSolution";        // M1: assumes exactly one solution
+    return "unknown";
+  }
   if (same(ans, q.x)) return "correct";
-  if (same(ans, q.signAns)) return "sign";          // M1
-  if (same(ans, q.oneSideAns)) return "oneSide";    // M2
+  if (same(ans, q.signAns)) return "sign";          // M2: sign slip with negatives
+  if (same(ans, q.fracAns)) return "fraction";      // extra: x/a + x/b = x/(a+b)
   return "unknown";
 }
 
@@ -139,29 +157,33 @@ function nextQuestion() {
   chosen = null;
   $("q-count").textContent = `Question ${state.qNum + 1} of ${CONTENT.questionsPerSession}`;
   $("q-level").textContent = CONTENT.levelNames[current.level];
-  $("q-format").textContent = CONTENT.formatLabels[current.format];
+  const isCount = current.kind === "count";
+  $("q-format").textContent = isCount ? CONTENT.formatLabels.count : CONTENT.formatLabels[current.format];
   $("q-equation").textContent = current.text;
   $("q-hint").classList.add("hidden");
   $("q-hint").textContent = CONTENT.hint;
   let html = "";
-  if (current.format === "mcq") {
+  if (isCount) {
+    html = current.options.map((o) => `<button class="option" data-val="${o}">${COUNT_LABELS[o]}</button>`).join("");
+  } else if (current.format === "mcq") {
     html = current.options.map((o) => `<button class="option" data-val="${o}">x = ${o}</button>`).join("");
   } else {
     html = `<label>x = <input type="number" id="ans" step="any" /></label>`;
-    if (current.format === "explain")
-      html += `<label>What was your first step, and why?<textarea id="explain" placeholder="e.g. I subtracted ... from both sides because ..."></textarea></label>`;
   }
+  if (current.format === "explain")
+    html += `<label>Justify your answer: what did you do, and why does it work?<textarea id="explain" placeholder="e.g. I expanded the bracket, then ... so ..."></textarea></label>`;
   $("q-input").innerHTML = html;
   document.querySelectorAll(".option").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".option").forEach((o) => o.classList.remove("selected"));
-    b.classList.add("selected"); chosen = parseFloat(b.dataset.val);
+    b.classList.add("selected"); chosen = isCount ? b.dataset.val : parseFloat(b.dataset.val);
   }));
   show("question");
 }
 
 function checkAnswer() {
-  const ans = current.format === "mcq" ? chosen : parseFloat($("ans").value);
-  if (ans === null || isNaN(ans)) { alert("Please give an answer first. Any try is okay!"); return; }
+  const usesButtons = current.kind === "count" || current.format === "mcq";
+  const ans = usesButtons ? chosen : parseFloat($("ans").value);
+  if (ans === null || (typeof ans === "number" && isNaN(ans))) { alert("Pick or type an answer first."); return; }
   const explanation = current.format === "explain" ? $("explain").value.trim() : "";
   if (current.format === "explain" && explanation.length < 3) { alert("Please write one short sentence about your first step."); return; }
 
@@ -184,7 +206,7 @@ function renderFeedback(a) {
   const ok = a.diagnosis === "correct";
   $("fb-main").innerHTML = ok
     ? `<p class="good">${esc(pick(CONTENT.feedback.correct))}</p>`
-    : `<p class="notyet">${esc(CONTENT.feedback.notYet)}</p><p>You answered x = ${a.answer}.</p>`;
+    : `<p class="notyet">${esc(CONTENT.feedback.notYet)}</p><p>You answered: ${esc(showAns(a.answer))}.</p>`;
 
   const r = $("fb-remedy");
   r.classList.add("hidden");
@@ -209,6 +231,16 @@ function renderFeedback(a) {
   $("btn-continue").textContent = state.qNum >= CONTENT.questionsPerSession ? "See my summary" : "Next question";
   $("fb-ai").classList.add("hidden");
   show("feedback");
+}
+
+const showAns = (v) => (typeof v === "string" ? COUNT_LABELS[v] : `x = ${v}`);
+
+// Bored learner can skip ahead: logged for the teacher (interaction-based adaptivity)
+function challengeMe() {
+  state.level = Math.min(CONTENT.maxLevel, state.level + 1);
+  state.skips = (state.skips || 0) + 1;
+  save();
+  nextQuestion();
 }
 
 function continueOn() {
@@ -263,10 +295,14 @@ async function getAIFeedback(a) {
 
 // Check the AI output BEFORE the learner sees it
 function checkAIOutput(out, a) {
-  const verdicts = ["correct", "sign_error", "one_side_error", "unclear"];
+  const verdicts = ["correct", "sign_error", "one_solution_assumption", "fraction_error", "unclear"];
   if (!out || !verdicts.includes(out.verdict)) return null;
   if (typeof out.feedback !== "string" || out.feedback.length < 5 || out.feedback.length > 350) return null;
-  if (a.diagnosis !== "correct" && new RegExp(`x\\s*=\\s*${a.correct}(?!\\d)`).test(out.feedback)) return null; // must not give away the answer
+  // must not give away the answer when the learner was wrong
+  if (a.diagnosis !== "correct") {
+    if (typeof a.correct === "number" && new RegExp(`x\\s*=\\s*${a.correct}(?!\\d)`).test(out.feedback)) return null;
+    if (typeof a.correct === "string" && out.feedback.toLowerCase().includes(COUNT_LABELS[a.correct].toLowerCase())) return null;
+  }
   return { verdict: out.verdict, feedback: out.feedback, source: "AI (Gemini), checked by app" };
 }
 
@@ -276,8 +312,9 @@ function fallbackFeedback(a) {
   const t = a.explanation.toLowerCase();
   let verdict = "unclear", feedback = f.unclear;
   if (a.diagnosis === "sign") { verdict = "sign_error"; feedback = f.sign; }
-  else if (a.diagnosis === "oneSide") { verdict = "one_side_error"; feedback = f.oneSide; }
-  else if (/both side|each side|both the side/.test(t)) { verdict = "correct"; feedback = f.good; }
+  else if (a.diagnosis === "oneSolution") { verdict = "one_solution_assumption"; feedback = f.oneSolution; }
+  else if (a.diagnosis === "fraction") { verdict = "fraction_error"; feedback = f.fraction; }
+  else if (a.diagnosis === "correct" && /both side|each side|cancel|lcm|expand|always true|false/.test(t)) { verdict = "correct"; feedback = f.good; }
   return { verdict, feedback, source: "Pre-written feedback (AI unavailable)" };
 }
 
@@ -290,13 +327,13 @@ function renderTeacher() {
   $("t-progress").innerHTML =
     `Current: ${CONTENT.levelNames[state.level]}<br>Attempts: ${at.length} · Correct: ${correct}` +
     (at.length ? ` (${Math.round((100 * correct) / at.length)}%)` : "") +
-    `<br>Misconception M1 (sign kept when moving): ${count("sign")}<br>Misconception M2 (one side only): ${count("oneSide")}<br>Other errors: ${count("unknown")}` +
+    `<br>M1 — assumes exactly one solution: ${count("oneSolution")}<br>M2 — sign slip with negatives: ${count("sign")}<br>Fraction error (adds denominators): ${count("fraction")}<br>Other errors: ${count("unknown")}<br>⚡ Challenge-me skips (boredom signal): ${state.skips || 0}` +
     `<br><button class="secondary small" id="btn-clear">Clear all data</button>`;
   $("btn-clear").onclick = () => { if (confirm("Delete all learner data on this device?")) { state = freshState(); save(); renderTeacher(); } };
 
   $("t-attempts").innerHTML = at.slice().reverse().map((a) => {
     let html = `<div class="card"><strong>${esc(a.equation)}</strong> · ${esc(CONTENT.formatLabels[a.format])}<br>
-      Answer: x = ${a.answer} (correct: ${a.correct}) · Diagnosis: <strong>${a.diagnosis}</strong> · Tutor decision: <strong>${a.outcome}</strong><br><span class="meta">${esc(a.time)}</span>`;
+      Answer: ${esc(showAns(a.answer))} (correct: ${esc(showAns(a.correct))}) · Diagnosis: <strong>${a.diagnosis}</strong> · Tutor decision: <strong>${a.outcome}</strong><br><span class="meta">${esc(a.time)}</span>`;
     if (a.review) {
       html += `<p><em>Explanation:</em> "${esc(a.explanation)}"</p>`;
       if (a.ai) {
@@ -343,6 +380,9 @@ $("btn-lesson-next").onclick = () => {
   else { state.lessonSeen = true; save(); nextQuestion(); }
 };
 $("btn-hint").onclick = () => $("q-hint").classList.remove("hidden");
+$("btn-challenge").onclick = challengeMe;
+$("btn-skip-lesson").textContent = CONTENT.skipLessonLabel;
+$("btn-skip-lesson").onclick = () => { state.lessonSeen = true; save(); nextQuestion(); };
 $("btn-check").onclick = checkAnswer;
 $("btn-continue").onclick = continueOn;
 $("btn-pin").onclick = () => {
