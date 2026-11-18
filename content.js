@@ -9,7 +9,7 @@ const F = (top, bottom) => `<span class="frac"><span>${top}</span><span>${bottom
 
 const CONTENT = {
   // ---------- Identity (shown on every screen + About) ----------
-  rollNo: "ROLLNO",                    // <-- your roll number, e.g. "23B1234"
+  rollNo: "24B0345",                    // <-- your roll number, e.g. "23B1234"
   appName: "Equilibria",
   learnerName: "Kabir Mehta",
   learnerClass: "Class 8 · Olympiad track",
