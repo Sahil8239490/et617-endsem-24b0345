@@ -186,7 +186,7 @@ function bars(items) {
   const w = 300, h = 150, bw = w / items.length;
   return `<svg viewBox="0 0 ${w} ${h + 22}" width="100%">${items.map((it, i) => {
     const bh = Math.max(3, (h - 16) * it.value / 100), x = i * bw + bw * 0.22;
-    return `<rect class="grow" style="animation-delay:${i * 80}ms" x="${x}" y="${h - bh}" width="${bw * 0.56}" height="${bh}" rx="6" fill="url(#g)"/>
+    return `<rect class="grow" style="animation-delay:${i * 80}ms" x="${x}" y="${h - bh}" width="${bw * 0.56}" height="${bh}" rx="6" fill="var(--primary)"/>
       <text x="${x + bw * 0.28}" y="${h - bh - 5}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text)">${it.value}%</text>
       <text x="${x + bw * 0.28}" y="${h + 15}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(it.label)}</text>`;
   }).join("")}<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d5dfc"/><stop offset="1" stop-color="#b3a9ff"/></linearGradient></defs></svg>`;
