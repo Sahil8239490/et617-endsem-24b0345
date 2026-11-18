@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Balance It!</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <span id="app-name">Balance It!</span>
+    <nav>
+      <button class="link" data-go="home">Home</button>
+      <button class="link" data-go="teacher-login">Teacher</button>
+      <button class="link" data-go="about">About</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SCREEN 1: Home -->
+    <section id="home" class="screen">
+      <h1 id="home-title"></h1>
+      <ul id="home-lines" class="calm"></ul>
+      <div id="progress-box" class="card"></div>
+      <div id="teacher-notes"></div>
+      <button class="primary" id="btn-start"></button>
+      <button class="secondary" id="btn-reset">Start a fresh session</button>
+    </section>
+
+    <!-- SCREEN 2: Learn (concept explanation) -->
+    <section id="learn" class="screen hidden">
+      <h2>How equations work</h2>
+      <div id="lesson-card" class="card"></div>
+      <div class="row">
+        <button class="secondary" id="btn-lesson-back">Back</button>
+        <button class="primary" id="btn-lesson-next">Next</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: Question -->
+    <section id="question" class="screen hidden">
+      <p class="meta"><span id="q-count"></span> · <span id="q-level"></span></p>
+      <p class="format" id="q-format"></p>
+      <div class="equation" id="q-equation"></div>
+      <div id="q-input"></div>
+      <p id="q-hint" class="hint hidden"></p>
+      <div class="row">
+        <button class="secondary" id="btn-hint">💡 Hint</button>
+        <button class="primary" id="btn-check">Check</button>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: Feedback (+ re-explanation or prerequisite) -->
+    <section id="feedback" class="screen hidden">
+      <div id="fb-main" class="card"></div>
+      <div id="fb-ai" class="card hidden"></div>
+      <div id="fb-remedy" class="card remedy hidden"></div>
+      <div id="fb-model" class="card model"></div>
+      <p id="fb-next" class="next-step"></p>
+      <button class="primary" id="btn-continue">Next question</button>
+    </section>
+
+    <!-- SCREEN 5: Summary -->
+    <section id="summary" class="screen hidden">
+      <h2 id="sum-title"></h2>
+      <div id="sum-stars" class="stars"></div>
+      <p id="sum-msg"></p>
+      <div id="sum-list"></div>
+      <button class="primary" data-go="home">Back to home</button>
+    </section>
+
+    <!-- SCREEN 6: Teacher login -->
+    <section id="teacher-login" class="screen hidden">
+      <h2>Teacher view</h2>
+      <label>Enter teacher PIN <input id="pin" type="password" inputmode="numeric" /></label>
+      <p id="pin-msg" class="hint"></p>
+      <button class="primary" id="btn-pin">Open</button>
+    </section>
+
+    <!-- SCREEN 7: Teacher dashboard (C5) -->
+    <section id="teacher" class="screen hidden">
+      <h2>Teacher view — <span class="learner-name"></span>'s progress</h2>
+      <div id="t-progress" class="card"></div>
+      <h3>Attempts (AI feedback needs your check)</h3>
+      <div id="t-attempts"></div>
+    </section>
+
+    <!-- SCREEN 8: About -->
+    <section id="about" class="screen hidden">
+      <h2>About</h2>
+      <div id="about-text"></div>
+      <p><strong>Roll number:</strong> <span class="rollno"></span></p>
+    </section>
+  </main>
+
+  <footer>ET 617 · Roll no: <span class="rollno"></span></footer>
+
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
