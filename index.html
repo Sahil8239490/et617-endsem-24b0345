@@ -3,88 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Equation Arena</title>
+  <title>Equilibria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Top bar (on every screen). The roll number chip satisfies the identity rule. -->
-  <header class="topbar">
-    <div class="brand"><span class="logo">EA</span><span id="app-name"></span></div>
-    <nav class="tabs">
-      <button data-go="dashboard">Dashboard</button>
-      <button data-go="chapters">Chapters</button>
-      <button data-go="teacher-login">Teacher</button>
-      <button data-go="about">About</button>
-    </nav>
-    <div class="user-chip"><span class="learner-name"></span><span class="roll">Roll no. <b class="rollno"></b></span></div>
-  </header>
-
-  <main>
-    <!-- SCREEN 1: Student dashboard -->
-    <section id="dashboard" class="screen"></section>
-
-    <!-- SCREEN 2: Chapter tiles -->
-    <section id="chapters" class="screen hidden"></section>
-
-    <!-- SCREEN 3: Chapter detail (concept + start) -->
-    <section id="chapter" class="screen hidden"></section>
-
-    <!-- SCREEN 4: Question -->
-    <section id="question" class="screen hidden">
-      <div class="panel narrow">
-        <div class="q-head">
-          <span id="q-chapter" class="eyebrow"></span>
-          <span id="q-count" class="muted"></span>
-        </div>
-        <div class="progress"><div id="q-progress"></div></div>
-        <p id="q-format" class="pill"></p>
-        <h3 id="q-title" class="q-title"></h3>
-        <div id="q-prompt" class="prompt"></div>
-        <div id="q-input"></div>
-        <p id="q-hint" class="hint hidden"></p>
-        <div class="actions">
-          <button class="btn ghost" id="btn-hint">Show hint</button>
-          <button class="btn" id="btn-check">Submit answer</button>
-        </div>
+  <!-- LOGIN: choose Student or Teacher -->
+  <div id="login" class="login">
+    <div class="login-card">
+      <div class="brand big-brand"><span class="logo">=</span><span class="app-name"></span></div>
+      <p class="muted">Adaptive practice for linear equations in one variable.</p>
+      <div class="roles">
+        <button class="role" id="role-student"><span class="role-icon">x</span><b>Student</b><span class="muted">Practise chapters and track progress</span></button>
+        <button class="role" id="role-teacher"><span class="role-icon">Σ</span><b>Teacher</b><span class="muted">Review progress and AI feedback</span></button>
       </div>
-    </section>
-
-    <!-- SCREEN 5: Feedback + brief solution -->
-    <section id="feedback" class="screen hidden">
-      <div class="panel narrow">
-        <div id="fb-status"></div>
-        <div id="fb-remedy"></div>
-        <div id="fb-ai"></div>
-        <div id="fb-solution"></div>
-        <div class="actions">
-          <span id="fb-next" class="decision"></span>
-          <button class="btn" id="btn-continue">Continue</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCREEN 6: Session summary -->
-    <section id="summary" class="screen hidden"></section>
-
-    <!-- SCREEN 7: Teacher login -->
-    <section id="teacher-login" class="screen hidden">
-      <div class="panel narrow">
-        <h2>Teacher dashboard</h2>
-        <p class="muted">Enter the teacher PIN to review learner progress and AI feedback.</p>
-        <input id="pin" type="password" inputmode="numeric" placeholder="PIN" />
+      <div id="pin-box" class="hidden">
+        <input id="pin" type="password" inputmode="numeric" placeholder="Teacher PIN" />
         <p id="pin-msg" class="error"></p>
-        <div class="actions"><button class="btn" id="btn-pin">Open dashboard</button></div>
+        <button class="btn primary" id="btn-pin" style="width:100%">Log in as teacher</button>
       </div>
-    </section>
+      <p class="id-line">ET 617 · P4 · P4-T3 · L6 · C5 · Roll no. <b class="rollno"></b></p>
+    </div>
+  </div>
 
-    <!-- SCREEN 8: Teacher dashboard (C5) -->
-    <section id="teacher" class="screen hidden"></section>
+  <!-- APP SHELL -->
+  <div id="app" class="shell hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="logo">=</span><span class="app-name"></span></div>
+      <nav id="nav"></nav>
+      <div class="side-foot">
+        <div class="user"><b id="user-name"></b><span>Roll no. <b class="rollno"></b></span></div>
+        <button class="btn ghost sm" id="btn-logout">Log out</button>
+      </div>
+    </aside>
 
-    <!-- SCREEN 9: About -->
-    <section id="about" class="screen hidden"></section>
-  </main>
+    <main>
+      <section id="dashboard" class="screen"></section>
+      <section id="chapters" class="screen hidden"></section>
+      <section id="chapter" class="screen hidden"></section>
+
+      <section id="question" class="screen hidden">
+        <div class="panel narrow">
+          <div class="q-head"><span id="q-chapter" class="eyebrow"></span><span id="q-count" class="muted"></span></div>
+          <div class="progress"><div id="q-progress"></div></div>
+          <p id="q-format" class="pill"></p>
+          <h3 id="q-title" class="q-title"></h3>
+          <div id="q-prompt" class="prompt"></div>
+          <div id="q-input"></div>
+          <p id="q-hint" class="hint hidden"></p>
+          <div class="actions">
+            <button class="btn ghost" id="btn-hint">Show hint</button>
+            <button class="btn primary" id="btn-check">Submit answer</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="feedback" class="screen hidden">
+        <div class="panel narrow">
+          <div id="fb-status"></div>
+          <div id="fb-remedy"></div>
+          <div id="fb-ai"></div>
+          <div id="fb-solution"></div>
+          <div class="actions">
+            <span id="fb-next" class="decision"></span>
+            <button class="btn primary" id="btn-continue">Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="summary" class="screen hidden"></section>
+      <section id="teacher" class="screen hidden"></section>
+    </main>
+  </div>
 
   <script src="content.js"></script>
   <script src="app.js"></script>

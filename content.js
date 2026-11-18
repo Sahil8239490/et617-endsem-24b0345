@@ -10,7 +10,7 @@ const F = (top, bottom) => `<span class="frac"><span>${top}</span><span>${bottom
 const CONTENT = {
   // ---------- Identity (shown on every screen + About) ----------
   rollNo: "ROLLNO",                    // <-- your roll number, e.g. "23B1234"
-  appName: "Equation Arena",
+  appName: "Equilibria",
   learnerName: "Kabir Mehta",
   learnerClass: "Class 8 · Olympiad track",
   teacherPin: "1234",                  // PIN for the Teacher dashboard
@@ -202,7 +202,7 @@ const CONTENT = {
   },
 
   // ---------- About ----------
-  about: [
+  aboutUnused: [
     "Equation Arena is an adaptive tutor for linear equations in one variable (Class 8), extended to Olympiad level.",
     "Designed for a high-achieving learner who is not challenged by routine practice.",
     "Questions are generated automatically. Each wrong answer is matched against known misconceptions, and the tutor chooses the next step: a harder question, a targeted explanation, or a prerequisite review.",

@@ -139,13 +139,65 @@ function decide(diag) {
 function show(id) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.add("hidden"));
   $(id).classList.remove("hidden");
-  const tab = { dashboard: "dashboard", chapters: "chapters", chapter: "chapters", question: "chapters", feedback: "chapters", summary: "chapters", "teacher-login": "teacher-login", teacher: "teacher-login", about: "about" }[id];
-  document.querySelectorAll(".tabs button").forEach((b) => b.classList.toggle("active", b.dataset.go === tab));
+  const tab = { chapter: "chapters", question: "chapters", feedback: "chapters", summary: "chapters" }[id] || id;
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.go === tab));
   window.scrollTo(0, 0);
   if (id === "dashboard") renderDashboard();
   if (id === "chapters") renderChapters();
-  if (id === "about") renderAbout();
   if (id === "teacher") renderTeacher();
+}
+
+// ---------- Login: Student or Teacher (separate interfaces) ----------
+function login(role) {
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("user-name").textContent = role === "teacher" ? "Teacher" : CONTENT.learnerName;
+  const items = role === "teacher" ? [["teacher", "Overview"]] : [["dashboard", "Dashboard"], ["chapters", "Chapters"]];
+  $("nav").innerHTML = items.map(([id, label]) => `<button data-go="${id}">${label}</button>`).join("");
+  document.querySelectorAll("#nav button").forEach((b) => (b.onclick = () => show(b.dataset.go)));
+  show(items[0][0]);
+}
+function logout() {
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("pin-box").classList.add("hidden");
+}
+
+// ---------- SVG charts ----------
+// Donut showing one percentage
+function donut(p, label) {
+  const C = 2 * Math.PI * 52;
+  return `<svg width="150" height="150" viewBox="0 0 140 140"><circle cx="70" cy="70" r="52" fill="none" stroke="#efecff" stroke-width="14"/>
+    <circle cx="70" cy="70" r="52" fill="none" stroke="var(--primary)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${(C * p) / 100} ${C}" transform="rotate(-90 70 70)" style="stroke-dashoffset:0"/>
+    <text x="70" y="70" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text)">${p}%</text>
+    <text x="70" y="90" text-anchor="middle" font-size="11" fill="var(--muted)">${label}</text></svg>`;
+}
+// Pie (donut) with several segments: [{label, value, color}]
+function pie(segs) {
+  const total = segs.reduce((t, s) => t + s.value, 0);
+  if (!total) return `<p class="empty">No data yet.</p>`;
+  const C = 2 * Math.PI * 52; let off = 0;
+  const arcs = segs.filter((s) => s.value).map((s) => { const len = (C * s.value) / total; const a = `<circle cx="70" cy="70" r="52" fill="none" stroke="${s.color}" stroke-width="22" stroke-dasharray="${len} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`; off += len; return a; }).join("");
+  return `<div class="chart-wrap"><svg width="150" height="150" viewBox="0 0 140 140">${arcs}<text x="70" y="76" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)">${total}</text></svg>
+    <div class="legend-list">${segs.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.label)} · <b>${s.value}</b></span>`).join("")}</div></div>`;
+}
+// Vertical bar chart: [{label, value 0-100}]
+function bars(items) {
+  const w = 300, h = 150, bw = w / items.length;
+  return `<svg viewBox="0 0 ${w} ${h + 22}" width="100%">${items.map((it, i) => {
+    const bh = Math.max(3, (h - 16) * it.value / 100), x = i * bw + bw * 0.22;
+    return `<rect class="grow" style="animation-delay:${i * 80}ms" x="${x}" y="${h - bh}" width="${bw * 0.56}" height="${bh}" rx="6" fill="url(#g)"/>
+      <text x="${x + bw * 0.28}" y="${h - bh - 5}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text)">${it.value}%</text>
+      <text x="${x + bw * 0.28}" y="${h + 15}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(it.label)}</text>`;
+  }).join("")}<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d5dfc"/><stop offset="1" stop-color="#b3a9ff"/></linearGradient></defs></svg>`;
+}
+// Line chart of running accuracy over attempts
+function line(values) {
+  if (values.length < 2) return `<p class="empty">Answer a few questions to see your trend.</p>`;
+  const w = 300, h = 120, step = w / (values.length - 1);
+  const pts = values.map((v, i) => `${i * step},${h - (h - 10) * v / 100}`).join(" ");
+  return `<svg viewBox="-4 0 ${w + 8} ${h + 4}" width="100%"><polygon points="0,${h} ${pts} ${w},${h}" fill="rgba(109,93,252,.12)"/>
+    <polyline class="draw" points="${pts}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linejoin="round" pathLength="400" stroke-dasharray="400"/></svg>`;
 }
 
 function stats(list = state.attempts) {
@@ -172,52 +224,27 @@ function barChart(list) {
     <div class="legend"><span><i style="background:var(--text)"></i>Correct</span><span><i style="background:#c9cddc"></i>Incorrect</span><span>Bar height = seconds taken</span></div>`;
 }
 
+function runningAccuracy(list) {
+  let c = 0;
+  return list.slice(-12).map((a, i, arr) => { c += a.diagnosis === "correct" ? 1 : 0; return Math.round((100 * c) / (i + 1)); });
+}
+
 function renderDashboard() {
   const s = stats();
   const next = chapterForLevel(state.level);
   const inSession = state.session && state.session.qNum < state.session.total;
-  const reviewed = state.attempts.filter((a) => a.review && a.review.status !== "pending" && a.ai).slice(-3).reverse();
+  const hour = new Date().getHours();
   $("dashboard").innerHTML = `
-    <div class="page-head"><div><h2>Dashboard</h2><p class="muted">Your progress in Linear Equations in One Variable.</p></div></div>
+    <div class="page-head"><div><p class="muted" style="margin:0">${hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"}</p><h2>${esc(CONTENT.learnerName)}</h2></div>
+      <button class="btn primary" id="dash-go">${inSession ? "Resume practice" : "Start: " + esc(next.title)}</button></div>
     <div class="grid">
-      <div class="card dark span-4">
-        <div class="muted">Current level</div>
-        <div class="big">${state.level} <span style="font-size:18px;color:#9aa3c7">/ ${CONTENT.maxLevel}</span></div>
-        <div>${esc(next.title)}</div>
-        <button class="link-btn" id="dash-go">${inSession ? "Resume practice" : "Start practice"} →</button>
-      </div>
-      <div class="card span-8">
-        <div class="card-title">Time per question <span class="muted">last 14 attempts</span></div>
-        ${barChart(state.attempts)}
-      </div>
-      <div class="span-12 stats">
-        <div><div class="stat-label">Questions attempted</div><div class="stat-value">${s.total}</div></div>
-        <div><div class="stat-label">Accuracy</div><div class="stat-value">${s.acc}%</div></div>
-        <div><div class="stat-label">Best streak</div><div class="stat-value">${s.best}</div></div>
-        <div><div class="stat-label">Avg. time per question</div><div class="stat-value">${s.avg}s</div></div>
-      </div>
-      <div class="card span-4">
-        <div class="card-title">Chapter mastery</div>
-        ${CONTENT.chapters.map((c) => `<div class="row-item" style="display:block"><div style="display:flex;justify-content:space-between"><span>${esc(c.title)}</span><b>${mastery(c)}%</b></div><div class="hbar"><div style="width:${mastery(c)}%"></div></div></div>`).join("")}
-      </div>
-      <div class="card span-4">
-        <div class="card-title">Misconceptions detected</div>
-        ${misconceptionCounts().map((m) => `<div class="row-item" style="display:block"><div style="display:flex;justify-content:space-between"><span>${esc(CONTENT.misconceptions[m.k])}</span><b>${m.n}</b></div><div class="hbar red"><div style="width:${pct(m.n, Math.max(1, s.total - s.correct))}%"></div></div></div>`).join("")}
-      </div>
-      <div class="card accent span-4">
-        <div style="opacity:.85">Recommended next</div>
-        <div class="big" style="font-size:24px;margin:6px 0">${esc(next.title)}</div>
-        <div style="opacity:.85;font-size:14px">${esc(next.summary)}</div>
-        <button class="link-btn" id="dash-rec">Open chapter →</button>
-      </div>
-      <div class="card span-7">
-        <div class="card-title">Recent activity</div>
-        ${state.attempts.length ? `<table class="data"><tr><th>Chapter</th><th>Question</th><th>Result</th><th>Time</th></tr>${state.attempts.slice(-6).reverse().map((a) => `<tr><td>${a.chapter}</td><td>${esc(a.title)}</td><td><span class="badge ${a.diagnosis === "correct" ? "ok" : "no"}">${a.diagnosis === "correct" ? "Correct" : "Incorrect"}</span></td><td>${a.timeSec}s</td></tr>`).join("")}</table>` : `<p class="empty">No activity yet. Open a chapter to begin.</p>`}
-      </div>
-      <div class="card span-5">
-        <div class="card-title">Teacher feedback</div>
-        ${reviewed.length ? reviewed.map((a) => `<div class="row-item" style="display:block"><b>${esc(a.title)}</b> <span class="badge ${a.review.status}">${a.review.status === "approved" ? "Approved" : "Teacher note"}</span><div class="muted" style="font-size:13px">${esc(a.review.status === "overridden" ? a.review.note : a.ai.feedback)}</div></div>`).join("") : `<p class="empty">No reviewed feedback yet. Your teacher reviews your written justifications.</p>`}
-      </div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Questions solved</div><div class="stat-value">${s.correct}</div></div><span class="stat-icon">✓</span></div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Current level</div><div class="stat-value">${state.level} / ${CONTENT.maxLevel}</div></div><span class="stat-icon">x</span></div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Best streak</div><div class="stat-value">${s.best}</div></div><span class="stat-icon">∞</span></div>
+      <div class="card span-4"><div class="card-title">Overall accuracy</div><div style="display:grid;place-items:center">${donut(s.acc, `${s.total} attempts`)}</div></div>
+      <div class="card span-8"><div class="card-title">Chapter mastery</div>${bars(CONTENT.chapters.map((c) => ({ label: `Ch ${c.id}`, value: mastery(c) })))}</div>
+      <div class="card span-8"><div class="card-title">Accuracy trend <span class="muted">last 12 answers</span></div>${line(runningAccuracy(state.attempts))}</div>
+      <div class="card accent span-4"><div style="opacity:.85">Recommended next</div><div class="big" style="font-size:22px;margin:6px 0">${esc(next.title)}</div><div style="opacity:.85;font-size:14px">${esc(next.summary)}</div><button class="link-btn" id="dash-rec">Open chapter →</button></div>
     </div>`;
   $("dash-go").onclick = () => (inSession ? nextQuestion() : openChapter(next.id));
   $("dash-rec").onclick = () => openChapter(next.id);
@@ -428,45 +455,28 @@ function renderTeacher() {
   const s = stats();
   const queue = state.attempts.filter((a) => a.review && a.ai).reverse();
   const pending = queue.filter((a) => a.review.status === "pending").length;
+  const colors = { sign: "#6d5dfc", oneSolution: "#f59e0b", fraction: "#10b981", unknown: "#cbd0e0" };
   $("teacher").innerHTML = `
-    <div class="page-head"><div><h2>Teacher dashboard</h2><p class="muted">Learner: ${esc(CONTENT.learnerName)} · ${esc(CONTENT.learnerClass)}</p></div>
+    <div class="page-head"><div><p class="muted" style="margin:0">Learner</p><h2>${esc(CONTENT.learnerName)} · ${esc(CONTENT.learnerClass)}</h2></div>
       <button class="btn ghost sm" id="t-clear">Reset learner data</button></div>
     <div class="grid">
-      <div class="span-12 stats">
-        <div><div class="stat-label">Attempts</div><div class="stat-value">${s.total}</div></div>
-        <div><div class="stat-label">Accuracy</div><div class="stat-value">${s.acc}%</div></div>
-        <div><div class="stat-label">Pending reviews</div><div class="stat-value">${pending}</div></div>
-        <div><div class="stat-label">Current level</div><div class="stat-value">${state.level} / ${CONTENT.maxLevel}</div></div>
-      </div>
-      <div class="card span-6">
-        <div class="card-title">Chapter progress</div>
-        <table class="data"><tr><th>Chapter</th><th>Attempts</th><th>Accuracy</th><th>Mastery</th></tr>
-        ${CONTENT.chapters.map((c) => { const cs = stats(state.attempts.filter((a) => a.chapter === c.id)); return `<tr><td>${esc(c.title)}</td><td>${cs.total}</td><td>${cs.acc}%</td><td>${mastery(c)}%</td></tr>`; }).join("")}</table>
-      </div>
-      <div class="card span-6">
-        <div class="card-title">Misconceptions and interaction signals</div>
-        ${misconceptionCounts().map((m) => `<div class="row-item"><span>${esc(CONTENT.misconceptions[m.k])}</span><b>${m.n}</b></div>`).join("")}
-        <div class="row-item"><span>Hints used</span><b>${s.hints}</b></div>
-        <div class="row-item"><span>Avg. time per question</span><b>${s.avg}s</b></div>
-        <div class="row-item"><span>Sets completed</span><b>${state.sessionsDone}</b></div>
-      </div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Accuracy</div><div class="stat-value">${s.acc}%</div></div><span class="stat-icon">%</span></div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Current level</div><div class="stat-value">${state.level} / ${CONTENT.maxLevel}</div></div><span class="stat-icon">x</span></div>
+      <div class="card span-4 stat-card"><div><div class="stat-label">Feedback to review</div><div class="stat-value">${pending}</div></div><span class="stat-icon">!</span></div>
+      <div class="card span-5"><div class="card-title">Misconceptions detected</div>${pie(misconceptionCounts().map((m) => ({ label: CONTENT.misconceptions[m.k], value: m.n, color: colors[m.k] })))}</div>
+      <div class="card span-7"><div class="card-title">Accuracy by chapter</div>${bars(CONTENT.chapters.map((c) => ({ label: `Ch ${c.id}`, value: stats(state.attempts.filter((a) => a.chapter === c.id)).acc })))}</div>
       <div class="card span-12">
-        <div class="card-title">AI feedback review queue <span class="muted">approve or override before it becomes final</span></div>
+        <div class="card-title">AI feedback review <span class="muted">approve or override before it is final</span></div>
         ${queue.length ? queue.map((a) => `
           <div class="review">
-            <div><b>${esc(a.title)}</b> <span class="badge ${a.review.status}">${a.review.status}</span> <span class="muted" style="font-size:12px">${esc(a.time)}</span></div>
-            <div style="font-size:14px;margin-top:6px">Answer: ${esc(a.answerText)} (correct: ${esc(a.correctText)}) · Diagnosis: ${esc(a.diagnosis === "correct" ? "correct" : CONTENT.misconceptions[a.diagnosis])}</div>
-            <div style="font-size:14px"><span class="muted">Learner justification:</span> “${esc(a.explanation)}”</div>
-            <div style="font-size:14px"><span class="muted">AI feedback (${esc(a.ai.source)}, verdict ${esc(a.ai.verdict)}):</span> ${esc(a.ai.feedback)}</div>
-            ${a.review.note ? `<div style="font-size:14px"><span class="muted">Teacher note:</span> ${esc(a.review.note)}</div>` : ""}
-            <textarea id="note-${a.id}" placeholder="Write replacement feedback to override the AI">${esc(a.review.note)}</textarea>
-            <div class="actions"><button class="btn primary sm" data-approve="${a.id}">Approve AI feedback</button><button class="btn ghost sm" data-override="${a.id}">Override with my feedback</button></div>
-          </div>`).join("") : `<p class="empty">No justifications submitted yet. Every third practice question asks the learner to justify the answer.</p>`}
-      </div>
-      <div class="card span-12">
-        <div class="card-title">Full attempt log</div>
-        ${state.attempts.length ? `<table class="data"><tr><th>Time</th><th>Ch.</th><th>Question</th><th>Answer</th><th>Diagnosis</th><th>Decision</th><th>Sec</th><th>Hint</th></tr>
-        ${state.attempts.slice().reverse().map((a) => `<tr><td>${esc(a.time)}</td><td>${a.chapter}</td><td>${esc(a.title)}</td><td>${esc(a.answerText)}</td><td>${a.diagnosis === "correct" ? "Correct" : esc(CONTENT.misconceptions[a.diagnosis])}</td><td>${esc(CONTENT.decisions[a.outcome])}</td><td>${a.timeSec}</td><td>${a.hint ? "Yes" : "—"}</td></tr>`).join("")}</table>` : `<p class="empty">No attempts yet.</p>`}
+            <div><b>${esc(a.title)}</b> <span class="badge ${a.review.status}">${a.review.status}</span></div>
+            <div style="font-size:14px;margin-top:6px"><span class="muted">Answer:</span> ${esc(a.answerText)} <span class="muted">· Correct:</span> ${esc(a.correctText)}</div>
+            <div style="font-size:14px"><span class="muted">Student's reasoning:</span> “${esc(a.explanation)}”</div>
+            <div style="font-size:14px"><span class="muted">AI feedback:</span> ${esc(a.ai.feedback)}</div>
+            ${a.review.note ? `<div style="font-size:14px"><span class="muted">Your note:</span> ${esc(a.review.note)}</div>` : ""}
+            <textarea id="note-${a.id}" placeholder="Write your own feedback to replace the AI's">${esc(a.review.note)}</textarea>
+            <div class="actions"><button class="btn primary sm" data-approve="${a.id}">Approve</button><button class="btn ghost sm" data-override="${a.id}">Override</button></div>
+          </div>`).join("") : `<p class="empty">Nothing to review yet. Every third practice question asks the student to explain their method.</p>`}
       </div>
     </div>`;
   $("t-clear").onclick = () => { if (confirm("Delete all learner data on this device?")) { state = freshState(); save(); renderTeacher(); } };
@@ -486,22 +496,18 @@ function review(id, status) {
   renderTeacher();
 }
 
-function renderAbout() {
-  $("about").innerHTML = `<div class="panel narrow"><h2>About ${esc(CONTENT.appName)}</h2>${CONTENT.about.map((p) => `<p>${esc(p)}</p>`).join("")}
-    <div class="row-item"><span>Roll number</span><b>${esc(CONTENT.rollNo)}</b></div></div>`;
-}
-
 // ---------- 9. Wiring ----------
 document.querySelectorAll(".rollno").forEach((e) => (e.textContent = CONTENT.rollNo));
-document.querySelectorAll(".learner-name").forEach((e) => (e.textContent = CONTENT.learnerName));
-$("app-name").textContent = CONTENT.appName;
+document.querySelectorAll(".app-name").forEach((e) => (e.textContent = CONTENT.appName));
 document.title = CONTENT.appName;
-document.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => show(b.dataset.go)));
+$("role-student").onclick = () => login("student");
+$("role-teacher").onclick = () => { $("role-teacher").classList.add("active"); $("pin-box").classList.remove("hidden"); $("pin").focus(); };
+$("btn-pin").onclick = () => {
+  if ($("pin").value === CONTENT.teacherPin) { $("pin").value = ""; $("pin-msg").textContent = ""; login("teacher"); }
+  else $("pin-msg").textContent = "Incorrect PIN.";
+};
+$("pin").onkeydown = (e) => { if (e.key === "Enter") $("btn-pin").click(); };
+$("btn-logout").onclick = logout;
 $("btn-hint").onclick = () => { current.hintUsed = true; $("q-hint").classList.remove("hidden"); };
 $("btn-check").onclick = checkAnswer;
 $("btn-continue").onclick = continueOn;
-$("btn-pin").onclick = () => {
-  if ($("pin").value === CONTENT.teacherPin) { $("pin").value = ""; $("pin-msg").textContent = ""; show("teacher"); }
-  else $("pin-msg").textContent = "Incorrect PIN.";
-};
-show("dashboard");
